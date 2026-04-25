@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ExHalle – Termine | Oldenburgisches Staatstheater</title>
+    <style>
+        :root {
+            --exhalle-red: #c0392b;
+            --exhalle-dark: #1a1a1a;
+            --exhalle-grey: #f5f5f5;
+            --exhalle-mid: #888;
+            --card-border: #e0e0e0;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: var(--exhalle-grey);
+            color: var(--exhalle-dark);
+            line-height: 1.5;
+        }
+
+        header {
+            background: var(--exhalle-dark);
+            color: white;
+            padding: 2rem 1.5rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 0.4rem;
+        }
+
+        header .subtitle {
+            color: var(--exhalle-red);
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+        }
+
+        .meta {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.85rem;
+            color: var(--exhalle-mid);
+            background: white;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .meta strong { color: var(--exhalle-dark); }
+
+        main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .event-card {
+            background: white;
+            border-radius: 6px;
+            border: 1px solid var(--card-border);
+            display: flex;
+            gap: 0;
+            margin-bottom: 1rem;
+            transition: box-shadow 0.15s;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .event-card:hover {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        }
+
+        .event-card.past {
+            opacity: 0.45;
+        }
+
+        /* Im Stack: nur die Karte selbst ausgrauen, nicht über opacity
+           damit die Schatten-Layer dahinter normal bleiben */
+        .card-stack-top .event-card.past {
+            opacity: 1;
+            filter: grayscale(40%) brightness(1.1);
+            color: #aaa;
+        }
+
+        .card-stack-top .event-card.past .event-date {
+            background: #555;
+        }
+
+        .card-stack-top .event-card.past .event-date .wochentag {
+            color: #999;
+        }
+
+        .card-stack-top .event-card.past .event-titel a,
+        .card-stack-top .event-card.past .event-titel {
+            color: #aaa;
+        }
+
+        .card-stack-top .event-card.past .event-uhrzeit,
+        .card-stack-top .event-card.past .beschreibung,
+        .card-stack-top .event-card.past .mehr-link {
+            color: #bbb;
+        }
+
+        /* Ticket-Abriss: gezackte Trennlinie */
+        .event-card::before {
+            content: '';
+            position: absolute;
+            left: 100px;
+            top: -1px;
+            bottom: -1px;
+            width: 0;
+            border-left: 2px dashed var(--card-border);
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Ticket-Stub (linke Seite: Datum) */
+        .event-date {
+            flex-shrink: 0;
+            width: 100px;
+            background: var(--exhalle-dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2rem 0.8rem;
+            gap: 0.1rem;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Halbkreis-Ausstanzung, zentriert auf die Karte */
+        .event-card .event-date::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            background: var(--exhalle-grey);
+            border-radius: 50%;
+            border: 1px solid var(--card-border);
+            z-index: 2;
+        }
+
+        .event-date .wochentag {
+            display: block;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            color: var(--exhalle-red);
+            letter-spacing: 0.1em;
+            font-weight: 700;
+        }
+
+        .event-date .tag-monat {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-top: 0.15rem;
+            letter-spacing: 0.02em;
+        }
+
+        /* Ticket-Hauptbereich */
+        .event-info {
+            flex: 1;
+            padding: 1rem 1.2rem 1rem 1.4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .event-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.25rem;
+        }
+
+        .event-titel {
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .event-titel a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .event-titel a:hover {
+            color: var(--exhalle-red);
+        }
+
+        .event-uhrzeit {
+            font-size: 0.88rem;
+            color: var(--exhalle-mid);
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.02em;
+        }
+
+        .beschreibung {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.15rem;
+        }
+
+        .event-footer {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-top: 0.6rem;
+            flex-wrap: wrap;
+        }
+
+        .ticket-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .ticket-available {
+            background: var(--exhalle-red);
+            color: white;
+        }
+
+        .ticket-available:hover {
+            background: #a93226;
+        }
+
+        .ticket-last {
+            background: #e67e22;
+            color: white;
+        }
+
+        .ticket-sold-out {
+            background: #ddd;
+            color: #888;
+        }
+
+        .ticket-standing {
+            background: #8e44ad;
+            color: white;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.1rem 0.45rem;
+            background: var(--exhalle-dark);
+            color: white;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-radius: 2px;
+            flex-shrink: 0;
+            align-self: center;
+        }
+
+        .heute-badge {
+            display: block;
+            margin-top: 0.4rem;
+            padding: 0.15rem 0.4rem;
+            background: var(--exhalle-red);
+            color: white;
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border-radius: 2px;
+            text-align: center;
+        }
+
+        .mehr-link {
+            font-size: 0.82rem;
+            color: var(--exhalle-mid);
+            text-decoration: none;
+            letter-spacing: 0.02em;
+        }
+
+        .mehr-link:hover {
+            color: var(--exhalle-red);
+            text-decoration: underline;
+        }
+
+        .no-events {
+            text-align: center;
+            padding: 3rem;
+            color: var(--exhalle-mid);
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem 1rem;
+            font-size: 0.8rem;
+            color: var(--exhalle-mid);
+            border-top: 1px solid var(--card-border);
+            margin-top: 2rem;
+        }
+
+        .bug-report-link {
+            color: var(--exhalle-mid);
+            text-decoration: none;
+        }
+
+        .bug-report-link:hover {
+            color: var(--exhalle-red);
+        }
+
+        /* === Premiere golden gradient === */
+        .event-card.premiere {
+            background: linear-gradient(135deg, #fffbf0 0%, #fff8e1 40%, #fdf3d0 100%);
+            border-color: #d4a843;
+        }
+
+        .event-card.premiere .event-date {
+            background: linear-gradient(160deg, #2a1f00 0%, #1a1400 100%);
+        }
+
+        .event-card.premiere .event-date .wochentag {
+            color: #d4a843;
+        }
+
+        .event-card.premiere::before {
+            border-left-color: #d4a843;
+        }
+
+        .event-card.premiere .event-date::after {
+            border-color: #d4a843;
+        }
+
+        .card-stack-top.premiere-stack::before,
+        .card-stack-top.premiere-stack::after {
+            background: linear-gradient(to right, #1a1400 100px, #fffbf0 100px);
+            border-color: #d4a843;
+        }
+
+        /* === Theme Toggle === */
+        .theme-toggle {
+            position: absolute;
+            top: 1rem;
+            right: 1.2rem;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            color: white;
+            font-size: 1rem;
+            width: 2.2rem;
+            height: 2.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        header { position: relative; }
+
+        /* === Dark Mode === */
+        @media (prefers-color-scheme: dark) {
+            html:not([data-theme="light"]) body { background: #111; color: #e8e8e8; }
+            html:not([data-theme="light"]) .meta { background: #1a1a1a; color: #777; border-bottom-color: #2a2a2a; }
+            html:not([data-theme="light"]) .meta strong { color: #e8e8e8; }
+            html:not([data-theme="light"]) .event-card { background: #1e1e1e; border-color: #2a2a2a; }
+            html:not([data-theme="light"]) .event-card::before { border-left-color: #2a2a2a; }
+            html:not([data-theme="light"]) .event-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+            html:not([data-theme="light"]) .event-date::after { background: #111; border-color: #2a2a2a; }
+            html:not([data-theme="light"]) .event-date { background: #0d0d0d; }
+            html:not([data-theme="light"]) .card-stack { background: #111; }
+            html:not([data-theme="light"]) .stack-toggle { color: #555; }
+            html:not([data-theme="light"]) .stack-toggle:hover { color: #e8e8e8; }
+            html:not([data-theme="light"]) .card-stack-top::before,
+            html:not([data-theme="light"]) .card-stack-top::after { background: linear-gradient(to right, #0d0d0d 100px, #1e1e1e 100px); border-color: #2a2a2a; }
+            html:not([data-theme="light"]) .stack-toggle { color: #555; }
+            html:not([data-theme="light"]) .stack-toggle:hover { color: #e8e8e8; }
+            html:not([data-theme="light"]) .beschreibung { color: #999; }
+            html:not([data-theme="light"]) .event-uhrzeit { color: #666; }
+            html:not([data-theme="light"]) .ticket-sold-out { background: #2a2a2a; color: #666; }
+            html:not([data-theme="light"]) .status-badge { background: #2a2a2a; }
+            html:not([data-theme="light"]) footer { border-color: #2a2a2a; }
+            html:not([data-theme="light"]) footer a { color: var(--exhalle-red); }
+
+            html:not([data-theme="light"]) .event-card.premiere { background: linear-gradient(135deg, #1e1800 0%, #181200 40%, #120e00 100%); border-color: #7a5f1a; }
+            html:not([data-theme="light"]) .event-card.premiere .event-date { background: linear-gradient(160deg, #0d0a00 0%, #080600 100%); }
+            html:not([data-theme="light"]) .event-card.premiere::before { border-left-color: #7a5f1a; }
+            html:not([data-theme="light"]) .event-card.premiere .event-date::after { border-color: #7a5f1a; background: #111; }
+            html:not([data-theme="light"]) .card-stack-top.premiere-stack::before,
+            html:not([data-theme="light"]) .card-stack-top.premiere-stack::after { background: linear-gradient(to right, #080600 100px, #1e1800 100px); border-color: #7a5f1a; }
+            html:not([data-theme="light"]) .card-stack-rest .event-card { background: #1e1e1e; border-color: #2a2a2a; }
+            html:not([data-theme="light"]) .card-stack-rest .event-card .event-date { background: #0d0d0d; }
+            html:not([data-theme="light"]) .card-stack-rest .event-card::before { border-left-color: #2a2a2a; }
+            html:not([data-theme="light"]) .timeline-bar { background: var(--exhalle-dark); border-bottom-color: #222; scrollbar-color: #333 var(--exhalle-dark); }
+            html:not([data-theme="light"]) .timeline-bar::-webkit-scrollbar-track { background: var(--exhalle-dark); }
+            html:not([data-theme="light"]) .timeline-bar::-webkit-scrollbar-thumb { background: #333; }
+            html:not([data-theme="light"]) .tl-month-seg { border-right-color: #252525; }
+            html:not([data-theme="light"]) .tl-seg-label { color: #555; }
+            html:not([data-theme="light"]) .tl-yr { color: #3a3a3a; }
+            html:not([data-theme="light"]) .tl-rail { background: #2a2a2a; }
+            html:not([data-theme="light"]) .tl-dot:not(.tl-dot-premiere):not(.tl-dot-today) { background: #555; }
+            html:not([data-theme="light"]) .tl-dot:hover { background: #ccc; }
+            html:not([data-theme="light"]) .tl-pause-seg { background: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(255,255,255,0.022) 5px, rgba(255,255,255,0.022) 10px); border-color: #252525; }
+            html:not([data-theme="light"]) .tl-pause-dates { color: #3a3a3a; }
+        }
+
+        /* Dark Mode per Button erzwungen */
+        html[data-theme="dark"] body { background: #111; color: #e8e8e8; }
+        html[data-theme="dark"] .meta { background: #1a1a1a; color: #777; border-bottom-color: #2a2a2a; }
+        html[data-theme="dark"] .meta strong { color: #e8e8e8; }
+        html[data-theme="dark"] .event-card { background: #1e1e1e; border-color: #2a2a2a; }
+        html[data-theme="dark"] .event-card::before { border-left-color: #2a2a2a; }
+        html[data-theme="dark"] .event-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        html[data-theme="dark"] .event-date::after { background: #111; border-color: #2a2a2a; }
+        html[data-theme="dark"] .event-date { background: #0d0d0d; }
+        html[data-theme="dark"] .card-stack { background: #111; }
+        html[data-theme="dark"] .stack-toggle { color: #555; }
+        html[data-theme="dark"] .stack-toggle:hover { color: #e8e8e8; }
+        html[data-theme="dark"] .card-stack-top::before,
+        html[data-theme="dark"] .card-stack-top::after { background: linear-gradient(to right, #0d0d0d 100px, #1e1e1e 100px); border-color: #2a2a2a; }
+        html[data-theme="dark"] .stack-toggle { color: #555; }
+        html[data-theme="dark"] .stack-toggle:hover { color: #e8e8e8; }
+        html[data-theme="dark"] .beschreibung { color: #999; }
+        html[data-theme="dark"] .event-uhrzeit { color: #666; }
+        html[data-theme="dark"] .ticket-sold-out { background: #2a2a2a; color: #666; }
+        html[data-theme="dark"] .status-badge { background: #2a2a2a; }
+        html[data-theme="dark"] footer { border-color: #2a2a2a; }
+        html[data-theme="dark"] footer a { color: var(--exhalle-red); }
+
+        html[data-theme="dark"] .event-card.premiere { background: linear-gradient(135deg, #1e1800 0%, #181200 40%, #120e00 100%); border-color: #7a5f1a; }
+        html[data-theme="dark"] .event-card.premiere .event-date { background: linear-gradient(160deg, #0d0a00 0%, #080600 100%); }
+        html[data-theme="dark"] .event-card.premiere::before { border-left-color: #7a5f1a; }
+        html[data-theme="dark"] .event-card.premiere .event-date::after { border-color: #7a5f1a; background: #111; }
+        html[data-theme="dark"] .card-stack-rest .event-card { background: #1e1e1e; border-color: #2a2a2a; }
+        html[data-theme="dark"] .card-stack-rest .event-card .event-date { background: #0d0d0d; }
+        html[data-theme="dark"] .card-stack-rest .event-card::before { border-left-color: #2a2a2a; }
+        html[data-theme="dark"] .timeline-bar { background: var(--exhalle-dark); border-bottom-color: #222; scrollbar-color: #333 var(--exhalle-dark); }
+        html[data-theme="dark"] .timeline-bar::-webkit-scrollbar-track { background: var(--exhalle-dark); }
+        html[data-theme="dark"] .timeline-bar::-webkit-scrollbar-thumb { background: #333; }
+        html[data-theme="dark"] .tl-month-seg { border-right-color: #252525; }
+        html[data-theme="dark"] .tl-seg-label { color: #555; }
+        html[data-theme="dark"] .tl-yr { color: #3a3a3a; }
+        html[data-theme="dark"] .tl-rail { background: #2a2a2a; }
+        html[data-theme="dark"] .tl-dot:not(.tl-dot-premiere):not(.tl-dot-today) { background: #555; }
+        html[data-theme="dark"] .tl-dot:hover { background: #ccc; }
+        html[data-theme="dark"] .tl-pause-seg { background: repeating-linear-gradient(-45deg, transparent, transparent 5px, rgba(255,255,255,0.022) 5px, rgba(255,255,255,0.022) 10px); border-color: #252525; }
+        html[data-theme="dark"] .tl-pause-dates { color: #3a3a3a; }
+
+        /* === Mobile: Ticket Layout beibehalten === */
+        @media (max-width: 600px) {
+            .event-card { font-size: 0.9rem; }
+            .event-titel { font-size: 0.95rem; }
+            .event-info { padding: 0.9rem 0.9rem 0.9rem 1.2rem; }
+        }
+
+        /* === Zeitstrahl === */
+        .timeline-bar {
+            background: white;
+            border-bottom: 2px solid var(--card-border);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc white;
+        }
+
+        .timeline-bar::-webkit-scrollbar { height: 3px; }
+        .timeline-bar::-webkit-scrollbar-track { background: white; }
+        .timeline-bar::-webkit-scrollbar-thumb { background: #ccc; border-radius: 2px; }
+
+        .tl-inner {
+            display: flex;
+            align-items: stretch;
+            padding: 0.75rem 1.5rem 0.65rem;
+            width: max-content;
+        }
+
+        .tl-seg {
+            display: flex;
+            flex-direction: column;
+            padding: 0 0.9rem;
+            position: relative;
+        }
+
+        .tl-month-seg {
+            min-width: 140px;
+            border-right: 1px solid var(--card-border);
+        }
+
+        .tl-month-seg:last-child { border-right: none; }
+
+        .tl-seg-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.14em;
+            color: #aaa;
+            margin-bottom: 0.45rem;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tl-yr {
+            color: #ccc;
+            font-weight: 400;
+            letter-spacing: 0.05em;
+        }
+
+        .tl-rail-wrap {
+            position: relative;
+            height: 20px;
+        }
+
+        .tl-rail {
+            position: absolute;
+            top: 50%; left: 0; right: 0;
+            height: 1px;
+            background: var(--card-border);
+            transform: translateY(-50%);
+        }
+
+        .tl-dot {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #bbb;
+            transition: transform 0.12s, background 0.12s;
+            z-index: 2;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .tl-dot:hover {
+            transform: translate(-50%, -50%) scale(2.2);
+            background: #555;
+        }
+
+        .tl-dot-premiere {
+            background: #d4a843;
+            width: 9px;
+            height: 9px;
+        }
+
+        .tl-dot-today {
+            background: var(--exhalle-red);
+            width: 9px;
+            height: 9px;
+            box-shadow: 0 0 6px rgba(192,57,43,0.7);
+        }
+
+        .tl-now {
+            position: absolute;
+            top: -4px; bottom: -4px;
+            width: 2px;
+            background: var(--exhalle-red);
+            transform: translateX(-50%);
+            border-radius: 1px;
+            opacity: 0.45;
+            z-index: 1;
+        }
+
+        .tl-pause-seg {
+            min-width: 90px;
+            padding: 0 1rem;
+            justify-content: center;
+            gap: 0.2rem;
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 5px,
+                rgba(0,0,0,0.04) 5px,
+                rgba(0,0,0,0.04) 10px
+            );
+            border-left: 1px solid var(--card-border);
+            border-right: 1px solid var(--card-border);
+        }
+
+        .tl-pause-seg .tl-seg-label {
+            color: var(--exhalle-red);
+            margin-bottom: 0.2rem;
+        }
+
+        .tl-pause-dates {
+            font-size: 0.58rem;
+            color: #bbb;
+            white-space: nowrap;
+            letter-spacing: 0.03em;
+        }
+
+        /* === Card Stack === */
+        .card-stack {
+            margin-bottom: 1rem;
+        }
+
+        .card-stack-top {
+            position: relative;
+        }
+
+        .card-stack-top::before,
+        .card-stack-top::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            background: linear-gradient(to right, var(--exhalle-dark) 100px, white 100px);
+            border: 1px solid var(--card-border);
+            border-radius: 6px;
+            pointer-events: none;
+        }
+
+        .card-stack-top::before {
+            top: 6px; bottom: -33px;
+            transform: scaleX(0.97);
+            z-index: 1;
+        }
+
+        .card-stack-top::after {
+            top: 12px; bottom: -38px;
+            transform: scaleX(0.94);
+            z-index: 0;
+        }
+
+        .card-stack[data-stack-size="2"] .card-stack-top::after { display: none; }
+
+        /* Schatten-Layer immer voll sichtbar */
+
+        .card-stack-top .event-card {
+            position: relative;
+            z-index: 2;
+            margin-bottom: 0;
+        }
+
+        .stack-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            margin-top: 0;
+            padding: 0.45rem 1rem;
+            background: transparent;
+            border: none;
+            color: var(--exhalle-mid);
+            font-size: 0.78rem;
+            font-family: inherit;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition: color 0.15s;
+            position: relative;
+            z-index: 3;
+        }
+
+        .stack-toggle:hover {
+            color: var(--exhalle-dark);
+        }
+
+        .stack-toggle .toggle-arrow {
+            display: inline-block;
+            transition: transform 0.25s ease;
+            font-style: normal;
+        }
+
+        .card-stack.is-open .stack-toggle .toggle-arrow {
+            transform: rotate(180deg);
+        }
+
+        .card-stack.is-open .card-stack-top::before,
+        .card-stack.is-open .card-stack-top::after {
+            display: none;
+        }
+
+        .card-stack-rest {
+            overflow: hidden;
+            max-height: 0;
+            transition: max-height 0.35s ease;
+        }
+
+        .card-stack-rest .event-card {
+            margin-top: 0.5rem;
+            margin-bottom: 0;
+            background: white;
+            border-color: var(--card-border);
+        }
+
+        .card-stack-rest .event-card .event-date {
+            background: var(--exhalle-dark);
+        }
+
+        .card-stack-rest .event-card .event-date .wochentag {
+            color: var(--exhalle-red);
+        }
+
+        .card-stack-rest .event-card::before {
+            border-left-color: var(--card-border);
+        }
+
+        .card-stack.is-open .card-stack-rest {
+            max-height: 5000px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="subtitle">Oldenburgisches Staatstheater</div>
+    <h1>ExHalle</h1>
+    <div class="subtitle">Alle Vorstellungen</div>
+    <button class="theme-toggle" id="themeToggle" title="Dark/Light Mode umschalten">🌙</button>
+</header>
+
+<div class="meta">
+    Automatisch aktualisiert am <strong>21.04.2026 17:41</strong> &nbsp;·&nbsp;
+    <strong>22</strong> kommende Termine
+</div>
+
+<div class="timeline-bar" role="navigation" aria-label="Terminübersicht"><div class="tl-inner" id="tlInner"><div class="tl-seg tl-month-seg"><div class="tl-seg-label">Apr<span class="tl-yr"> 2026</span></div><div class="tl-rail-wrap"><div class="tl-rail"></div><div class="tl-now" id="tlNow" style="left:69.0%"></div><a class="tl-dot" href="#evt-2026-04-09" style="left:27.6%" title="Donnerstag, 09. Apr · 2 Vorstellungen"></a><a class="tl-dot" href="#evt-2026-04-10" style="left:31.0%" title="Freitag, 10. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot" href="#evt-2026-04-12" style="left:37.9%" title="Sonntag, 12. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot" href="#evt-2026-04-15" style="left:48.3%" title="Mittwoch, 15. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot" href="#evt-2026-04-16" style="left:51.7%" title="Donnerstag, 16. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot tl-dot-today" href="#evt-2026-04-21" style="left:69.0%" title="Dienstag, 21. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot" href="#evt-2026-04-22" style="left:72.4%" title="Mittwoch, 22. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot" href="#evt-2026-04-24" style="left:79.3%" title="Freitag, 24. Apr · DAS GEWICHT DER AMEISEN"></a><a class="tl-dot tl-dot-premiere" href="#evt-2026-04-25" style="left:82.8%" title="Samstag, 25. Apr · 2 Vorstellungen"></a><a class="tl-dot" href="#evt-2026-04-26" style="left:86.2%" title="Sonntag, 26. Apr · 2 Vorstellungen"></a><a class="tl-dot" href="#evt-2026-04-28" style="left:93.1%" title="Dienstag, 28. Apr · 2 Vorstellungen"></a><a class="tl-dot" href="#evt-2026-04-29" style="left:96.6%" title="Mittwoch, 29. Apr · 2 Vorstellungen"></a></div></div><div class="tl-seg tl-month-seg"><div class="tl-seg-label">Mai</div><div class="tl-rail-wrap"><div class="tl-rail"></div><a class="tl-dot" href="#evt-2026-05-02" style="left:3.3%" title="Samstag, 02. Mai · MY SHIP – STORIES OF MIGRATI"></a><a class="tl-dot" href="#evt-2026-05-05" style="left:13.3%" title="Dienstag, 05. Mai · MY SHIP – STORIES OF MIGRATI"></a><a class="tl-dot" href="#evt-2026-05-07" style="left:20.0%" title="Donnerstag, 07. Mai · MY SHIP – STORIES OF MIGRATI"></a><a class="tl-dot" href="#evt-2026-05-09" style="left:26.7%" title="Samstag, 09. Mai · NOIeS"></a><a class="tl-dot tl-dot-premiere" href="#evt-2026-05-15" style="left:46.7%" title="Freitag, 15. Mai · HEARTSHIP"></a><a class="tl-dot" href="#evt-2026-05-19" style="left:60.0%" title="Dienstag, 19. Mai · HEARTSHIP"></a><a class="tl-dot" href="#evt-2026-05-20" style="left:63.3%" title="Mittwoch, 20. Mai · HEARTSHIP"></a><a class="tl-dot" href="#evt-2026-05-23" style="left:73.3%" title="Samstag, 23. Mai · HEARTSHIP"></a><a class="tl-dot" href="#evt-2026-05-26" style="left:83.3%" title="Dienstag, 26. Mai · HEARTSHIP"></a><a class="tl-dot" href="#evt-2026-05-29" style="left:93.3%" title="Freitag, 29. Mai · 35 Tonnen"></a><a class="tl-dot" href="#evt-2026-05-30" style="left:96.7%" title="Samstag, 30. Mai · 35 Tonnen"></a></div></div><div class="tl-seg tl-month-seg"><div class="tl-seg-label">Jun</div><div class="tl-rail-wrap"><div class="tl-rail"></div></div></div><div class="tl-seg tl-pause-seg"><div class="tl-seg-label">&#9728;&#65039;&nbsp;Spielzeitpause</div><div class="tl-pause-dates">12.&nbsp;Jul&nbsp;&ndash;&nbsp;25.&nbsp;Aug</div></div><div class="tl-seg tl-month-seg"><div class="tl-seg-label">Sep</div><div class="tl-rail-wrap"><div class="tl-rail"></div></div></div></div></div>
+
+<main>
+    
+        <div class="event-card past" id="evt-2026-04-09">
+            <div class="event-date">
+                <span class="wochentag">Donnerstag</span>
+                <span class="tag-monat">09. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    <span class="status-badge">Wiederaufnahme</span>
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card past">
+            <div class="event-date">
+                <span class="wochentag">Donnerstag</span>
+                <span class="tag-monat">09. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/wir-gegen-uns" target="_blank" rel="noopener">WIR GEGEN UNS</a></h3>
+                    <span class="status-badge">Zum letzten Mal in dieser Spielzeit</span>
+                </div>
+                <p class="event-uhrzeit">20:00 - 21:25 Uhr</p>
+                <p class="beschreibung">Von Łukasz Ławicki</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20080" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/wir-gegen-uns" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card past" id="evt-2026-04-10">
+            <div class="event-date">
+                <span class="wochentag">Freitag</span>
+                <span class="tag-monat">10. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card past" id="evt-2026-04-12">
+            <div class="event-date">
+                <span class="wochentag">Sonntag</span>
+                <span class="tag-monat">12. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">16:00 - 17:30 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20247" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card past" id="evt-2026-04-15">
+            <div class="event-date">
+                <span class="wochentag">Mittwoch</span>
+                <span class="tag-monat">15. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card past" id="evt-2026-04-16">
+            <div class="event-date">
+                <span class="wochentag">Donnerstag</span>
+                <span class="tag-monat">16. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20251" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card past" id="evt-2026-04-21">
+            <div class="event-date">
+                <span class="wochentag">Dienstag</span>
+                <span class="tag-monat">21. Apr</span>
+                <span class="heute-badge">Heute</span>
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-04-22">
+            <div class="event-date">
+                <span class="wochentag">Mittwoch</span>
+                <span class="tag-monat">22. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-04-24">
+            <div class="event-date">
+                <span class="wochentag">Freitag</span>
+                <span class="tag-monat">24. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" target="_blank" rel="noopener">DAS GEWICHT DER AMEISEN</a></h3>
+                    <span class="status-badge">Zum letzten Mal</span>
+                </div>
+                <p class="event-uhrzeit">10:30 - 12:00 Uhr</p>
+                <p class="beschreibung">von David Paquet</p><p class="beschreibung">ab 12 Jahren</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20255" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/just/spielzeit-2425/das-gewicht-der-ameisen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card premiere" id="evt-2026-04-25">
+            <div class="event-date">
+                <span class="wochentag">Samstag</span>
+                <span class="tag-monat">25. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" target="_blank" rel="noopener">In Zwischen</a></h3>
+                    <span class="status-badge">Premiere</span>
+                </div>
+                <p class="event-uhrzeit">18:00 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <span class="ticket-badge ticket-sold-out">Derzeit ausverkauft</span>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card premiere">
+            <div class="event-date">
+                <span class="wochentag">Samstag</span>
+                <span class="tag-monat">25. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" target="_blank" rel="noopener">/hʌm•pʌls/</a></h3>
+                    <span class="status-badge">Premiere</span>
+                </div>
+                <p class="event-uhrzeit">20:30 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <span class="ticket-badge ticket-sold-out">Derzeit ausverkauft</span>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-04-26">
+            <div class="event-date">
+                <span class="wochentag">Sonntag</span>
+                <span class="tag-monat">26. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" target="_blank" rel="noopener">/hʌm•pʌls/</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">17:00 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20358" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card ">
+            <div class="event-date">
+                <span class="wochentag">Sonntag</span>
+                <span class="tag-monat">26. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" target="_blank" rel="noopener">In Zwischen</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">19:30 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20354" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-04-28">
+            <div class="event-date">
+                <span class="wochentag">Dienstag</span>
+                <span class="tag-monat">28. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" target="_blank" rel="noopener">In Zwischen</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">18:00 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20355" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card ">
+            <div class="event-date">
+                <span class="wochentag">Dienstag</span>
+                <span class="tag-monat">28. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" target="_blank" rel="noopener">/hʌm•pʌls/</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:30 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20359" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-04-29">
+            <div class="event-date">
+                <span class="wochentag">Mittwoch</span>
+                <span class="tag-monat">29. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" target="_blank" rel="noopener">/hʌm•pʌls/</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">18:00 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20360" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/h%CA%8Cmp%CA%8Cls/" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card ">
+            <div class="event-date">
+                <span class="wochentag">Mittwoch</span>
+                <span class="tag-monat">29. Apr</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" target="_blank" rel="noopener">In Zwischen</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:30 Uhr</p>
+                <p class="beschreibung">Erwachsenenclub des Oldenburgischen Staatstheaters</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20356" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/theaterclubs/erwachsenenclubs/spielzeit-2526/in-zwischen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-02">
+            <div class="event-date">
+                <span class="wochentag">Samstag</span>
+                <span class="tag-monat">02. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/konzert/sonderkonzerte/spielzeit-2526/my-ship-stories-of-migration" target="_blank" rel="noopener">MY SHIP – STORIES OF MIGRATION</a></h3>
+                    <span class="status-badge">Zusatztermin</span>
+                </div>
+                <p class="event-uhrzeit">20:00 - 22:05 Uhr</p>
+                <p class="beschreibung">Kurt Weill – Songs in Jazz</p><p class="beschreibung">Eine Kooperation mit Jazzszene Nordwest</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20364" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/konzert/sonderkonzerte/spielzeit-2526/my-ship-stories-of-migration" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-05">
+            <div class="event-date">
+                <span class="wochentag">Dienstag</span>
+                <span class="tag-monat">05. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/konzert/sonderkonzerte/spielzeit-2526/my-ship-stories-of-migration" target="_blank" rel="noopener">MY SHIP – STORIES OF MIGRATION</a></h3>
+                    <span class="status-badge">Zusatztermin</span>
+                </div>
+                <p class="event-uhrzeit">20:00 - 22:05 Uhr</p>
+                <p class="beschreibung">Kurt Weill – Songs in Jazz</p><p class="beschreibung">Eine Kooperation mit Jazzszene Nordwest</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20365" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/konzert/sonderkonzerte/spielzeit-2526/my-ship-stories-of-migration" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-07">
+            <div class="event-date">
+                <span class="wochentag">Donnerstag</span>
+                <span class="tag-monat">07. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/konzert/sonderkonzerte/spielzeit-2526/my-ship-stories-of-migration" target="_blank" rel="noopener">MY SHIP – STORIES OF MIGRATION</a></h3>
+                    <span class="status-badge">Zusatztermin</span>
+                </div>
+                <p class="event-uhrzeit">20:00 - 22:05 Uhr</p>
+                <p class="beschreibung">Kurt Weill – Songs in Jazz</p><p class="beschreibung">Eine Kooperation mit Jazzszene Nordwest</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20366" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/konzert/sonderkonzerte/spielzeit-2526/my-ship-stories-of-migration" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-09">
+            <div class="event-date">
+                <span class="wochentag">Samstag</span>
+                <span class="tag-monat">09. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/konzert/klangpol" target="_blank" rel="noopener">NOIeS</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">BlueScreen Auftritt »Vom Lauschen zum Tönen«Blauschimmel Atelier</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20188" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/konzert/klangpol" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card premiere" id="evt-2026-05-15">
+            <div class="event-date">
+                <span class="wochentag">Freitag</span>
+                <span class="tag-monat">15. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" target="_blank" rel="noopener">HEARTSHIP</a></h3>
+                    <span class="status-badge">Premiere</span>
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Von Caren Jeß</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20049" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-19">
+            <div class="event-date">
+                <span class="wochentag">Dienstag</span>
+                <span class="tag-monat">19. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" target="_blank" rel="noopener">HEARTSHIP</a></h3>
+                    <span class="status-badge">Bring a friend</span>
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Von Caren Jeß</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20050" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-20">
+            <div class="event-date">
+                <span class="wochentag">Mittwoch</span>
+                <span class="tag-monat">20. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" target="_blank" rel="noopener">HEARTSHIP</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Von Caren Jeß</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20051" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-23">
+            <div class="event-date">
+                <span class="wochentag">Samstag</span>
+                <span class="tag-monat">23. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" target="_blank" rel="noopener">HEARTSHIP</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Von Caren Jeß</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20052" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-26">
+            <div class="event-date">
+                <span class="wochentag">Dienstag</span>
+                <span class="tag-monat">26. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" target="_blank" rel="noopener">HEARTSHIP</a></h3>
+                    <span class="status-badge">Zum letzten Mal in dieser Spielzeit</span>
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Von Caren Jeß</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20065" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/schauspiel/spielzeit-2526/heartship" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-29">
+            <div class="event-date">
+                <span class="wochentag">Freitag</span>
+                <span class="tag-monat">29. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/gastspiele/35-tonnen" target="_blank" rel="noopener">35 Tonnen</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Ein immersives Theaterstück von Nö Theater</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20653" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/gastspiele/35-tonnen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="event-card " id="evt-2026-05-30">
+            <div class="event-date">
+                <span class="wochentag">Samstag</span>
+                <span class="tag-monat">30. Mai</span>
+                
+            </div>
+            <div class="event-info">
+                <div class="event-header">
+                    <h3 class="event-titel"><a href="https://staatstheater.de/programm/gastspiele/35-tonnen" target="_blank" rel="noopener">35 Tonnen</a></h3>
+                    
+                </div>
+                <p class="event-uhrzeit">20:00 Uhr</p>
+                <p class="beschreibung">Ein immersives Theaterstück von Nö Theater</p>
+                <div class="event-footer">
+                    <a href="https://tickets.staatstheater.de/eventim.webshop/webticket/shop?event=20652" class="ticket-badge ticket-available" target="_blank" rel="noopener">Karten</a>
+                    <a href="https://staatstheater.de/programm/gastspiele/35-tonnen" class="mehr-link" target="_blank" rel="noopener">Mehr Infos →</a>
+                </div>
+            </div>
+        </div>
+</main>
+
+<footer>
+    Daten von <a href="https://staatstheater.de/kalender" target="_blank">staatstheater.de</a> &nbsp;·&nbsp;
+    Generiert am 21.04.2026 17:41 &nbsp;·&nbsp;
+    <a href="https://litschi.space/Impressum.html" target="_blank" rel="noopener">Impressum</a>
+    &nbsp;·&nbsp;
+    <a href="https://litschi.space/report.html?page=exerzierhalle.de" target="_blank" rel="noopener" class="bug-report-link">🐛 Fehler melden</a>
+</footer>
+
+<script>
+// Theme Toggle
+(function() {
+    const html = document.documentElement;
+    const btn = document.getElementById('themeToggle');
+    const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    const saved = localStorage.getItem('theme');
+    const isDark = saved ? saved === 'dark' : systemDark;
+    if (saved) html.setAttribute('data-theme', saved);
+    btn.textContent = isDark ? '☀️' : '🌙';
+
+    btn.addEventListener('click', () => {
+        const current = html.getAttribute('data-theme') ||
+            (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        const next = current === 'dark' ? 'light' : 'dark';
+        html.setAttribute('data-theme', next);
+        localStorage.setItem('theme', next);
+        btn.textContent = next === 'dark' ? '☀️' : '🌙';
+    });
+})();
+</script>
+
+<script>
+(function() {
+    const main = document.querySelector('main');
+    const cards = Array.from(main.querySelectorAll(':scope > .event-card'));
+    if (cards.length === 0) return;
+
+    function getTitel(card) {
+        const el = card.querySelector('.event-titel');
+        return el ? el.textContent.trim().toLowerCase() : '';
+    }
+
+    const groups = [];
+    let i = 0;
+    while (i < cards.length) {
+        const titel = getTitel(cards[i]);
+        const group = [cards[i]];
+        let j = i + 1;
+        while (j < cards.length && getTitel(cards[j]) === titel) {
+            group.push(cards[j]);
+            j++;
+        }
+        groups.push(group);
+        i = j;
+    }
+
+    groups.forEach(group => {
+        if (group.length < 2) return;
+        const count = group.length;
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'card-stack';
+        wrapper.dataset.stackSize = count;
+        main.insertBefore(wrapper, group[0]);
+
+        const topWrap = document.createElement('div');
+        topWrap.className = 'card-stack-top' + (group[0].classList.contains('premiere') ? ' premiere-stack' : '');
+        topWrap.appendChild(group[0]);
+        wrapper.appendChild(topWrap);
+
+        const btn = document.createElement('button');
+        btn.className = 'stack-toggle';
+        btn.innerHTML = `<i class="toggle-arrow">▼</i> ${count - 1} weitere${count - 1 !== 1 ? ' Termine' : 'n Termin'} anzeigen`;
+        wrapper.appendChild(btn);
+
+        const rest = document.createElement('div');
+        rest.className = 'card-stack-rest';
+        for (let k = 1; k < group.length; k++) {
+            rest.appendChild(group[k]);
+        }
+        wrapper.appendChild(rest);
+
+        btn.addEventListener('click', () => {
+            const isOpen = wrapper.classList.toggle('is-open');
+            btn.innerHTML = isOpen
+                ? `<i class="toggle-arrow">▼</i> Termine einklappen`
+                : `<i class="toggle-arrow">▼</i> ${count - 1} weitere${count - 1 !== 1 ? ' Termine' : 'n Termin'} anzeigen`;
+        });
+    });
+})();
+</script>
+
+<script>
+// Zeitstrahl: zentrieren oder zu Heute scrollen
+(function() {
+    const bar   = document.querySelector('.timeline-bar');
+    const inner = document.getElementById('tlInner');
+    const now   = document.getElementById('tlNow');
+    if (!bar || !inner) return;
+
+    function alignTimeline() {
+        const barW   = bar.clientWidth;
+        const innerW = inner.offsetWidth;   // offsetWidth = echte Inhaltsbreite bei width:max-content
+
+        if (innerW <= barW) {
+            // Inhalt kürzer als Viewport → mittig ausrichten
+            inner.style.marginLeft = Math.max(0, Math.floor((barW - innerW) / 2)) + 'px';
+        } else {
+            inner.style.marginLeft = '';
+            if (now) {
+                // Inhalt breiter → Heute in die Mitte scrollen
+                const seg = now.closest('.tl-seg');
+                if (seg) {
+                    bar.scrollLeft = Math.max(0, seg.offsetLeft + now.offsetLeft - barW / 2);
+                }
+            }
+        }
+    }
+
+    // Nach Layout-Berechnung ausführen
+    requestAnimationFrame(alignTimeline);
+    window.addEventListener('resize', alignTimeline);
+})();
+</script>
+
+</body>
+</html>
